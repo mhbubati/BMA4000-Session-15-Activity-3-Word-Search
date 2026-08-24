@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Crossword Word Search</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #003366; --green1: #2ECC71; --green2: #27AE60; --blue1: #2980B9; --blue2: #1A5276; }
+        body { font-family: 'Segoe UI', 'Roboto', Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 30px 16px; min-height: 100vh; }
+        .container { max-width: 960px; width: 100%; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 36px 40px; border-top: 6px solid var(--primary); }
+        .header { border-bottom: 2px solid var(--primary); padding-bottom: 14px; margin-bottom: 20px; }
+        .header .module-code { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--primary); text-transform: uppercase; }
+        .header .session-title { font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+        .header .activity-type { font-size: 15px; color: #666; margin-top: 2px; }
+        h1 { font-size: 26px; color: var(--primary); margin: 16px 0 6px; }
+        .subtitle { font-size: 15px; color: #555; margin-bottom: 20px; padding: 10px 16px; background: #f5f7fa; border-left: 3px solid var(--primary); border-radius: 4px; }
+
+        .why-matters { background: linear-gradient(135deg, #eaf2f8, #e8f0fe); border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
+        .why-matters h3 { color: var(--primary); font-size: 17px; margin-bottom: 8px; }
+        .why-matters p { font-size: 14px; color: #333; line-height: 1.8; margin-bottom: 6px; }
+        .why-matters ul { padding-left: 20px; font-size: 14px; color: #333; line-height: 1.9; margin: 6px 0; }
+        .why-matters ul li { list-style-type: "✅ "; padding-left: 4px; }
+        .why-matters .closing { font-size: 14px; color: var(--primary); font-weight: 600; margin-top: 8px; font-style: italic; }
+
+        /* INSTRUCTIONS - Two methods clearly shown */
+        .instructions { background: #f5f7fa; border-radius: 10px; padding: 18px 22px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
+        .instructions h3 { color: var(--primary); font-size: 16px; margin-bottom: 10px; }
+        .method { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; padding: 12px 14px; background: #fff; border-radius: 8px; border: 1px solid #e8ecf1; }
+        .method:last-child { margin-bottom: 0; }
+        .method .m-icon { font-size: 28px; flex-shrink: 0; line-height: 1; }
+        .method .m-body { flex: 1; }
+        .method .m-title { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 3px; }
+        .method .m-steps { font-size: 13px; color: #444; line-height: 1.7; }
+        .method .m-steps strong { color: var(--primary); }
+        .method .m-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 4px; vertical-align: middle; }
+        .method .m-badge.phone { background: #E8F8F0; color: #1a7a4a; }
+        .method .m-badge.desktop { background: #EAF2F8; color: var(--blue2); }
+        .rules { margin-top: 12px; padding: 10px 14px; background: linear-gradient(135deg, #eaf2f8, #e8f0fe); border-radius: 8px; font-size: 13px; color: #333; line-height: 1.7; }
+        .rules strong { color: var(--primary); }
+
+        /* Selection indicator */
+        .sel-indicator { display: none; text-align: center; padding: 8px 16px; margin-bottom: 12px; background: linear-gradient(135deg, var(--primary), var(--blue2)); color: #fff; border-radius: 8px; font-size: 14px; font-weight: 600; animation: slideDown 0.3s ease; }
+        .sel-indicator.show { display: block; }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
+
+        .top-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; padding: 10px 16px; background: #f5f7fa; border-radius: 8px; }
+        .timer { font-size: 20px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+        .hint-btn { background: var(--primary); color: #fff; border: none; padding: 8px 20px; font-size: 13px; font-weight: 700; border-radius: 30px; cursor: pointer; transition: all 0.2s; }
+        .hint-btn:hover:not(:disabled) { background: var(--blue2); transform: translateY(-1px); }
+        .hint-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .hint-label { font-size: 12px; color: #888; }
+
+        .game-area { display: flex; flex-wrap: wrap; gap: 24px; }
+        .grid-wrap { flex: 2; min-width: 280px; overflow-x: auto; }
+        .grid { display: inline-grid; gap: 2px; user-select: none; touch-action: none; }
+        .cell {
+            width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;
+            font-size: 14px; font-weight: 700; color: var(--primary); background: #f8f9fa;
+            border: 1px solid #dde1e6; border-radius: 3px; cursor: pointer;
+            text-transform: uppercase; transition: all 0.5s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cell.black { background: #2c3e50; border-color: #2c3e50; cursor: default; pointer-events: none; }
+        .cell:hover:not(.black):not(.found):not(.faded) { background: #e8ecf1; }
+        .cell.selecting { background: #F1C40F !important; color: #333 !important; transform: scale(1.06); transition: all 0.12s; }
+        .cell.first-tap { background: #F1C40F !important; color: #333 !important; transform: scale(1.1); box-shadow: 0 0 0 3px rgba(241,196,15,0.5); transition: all 0.15s; }
+        .cell.hint-flash { animation: hintFlash 0.35s ease 5; }
+        @keyframes hintFlash { 0%,100%{background:#f8f9fa}50%{background:#F1C40F;transform:scale(1.1)} }
+
+        .cell.found { color: #fff !important; cursor: pointer; border-color: transparent; text-shadow: 0 1px 1px rgba(0,0,0,0.2); }
+        .cell.c0{background:#2ECC71}.cell.c1{background:#27AE60}.cell.c2{background:#1E8449}.cell.c3{background:#196F3D}
+        .cell.c4{background:#2980B9}.cell.c5{background:#2471A3}.cell.c6{background:#1A5276}.cell.c7{background:#154360}
+        .cell.c8{background:#1ABC9C}.cell.c9{background:#17A589}.cell.c10{background:#148F77}.cell.c11{background:#0E6655}
+        .cell.c12{background:#3498DB}.cell.c13{background:#2E86C1}.cell.c14{background:#2874A6}.cell.c15{background:#21618C}
+
+        .cell.faded { opacity: 0 !important; transform: scale(0.5) !important; pointer-events: none !important; border-color: transparent !important; background: transparent !important; color: transparent !important; }
+        .cell.black.faded { opacity: 0 !important; transform: scale(0) !important; }
+        .cell.revealed { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.15); border-radius: 4px; }
+
+        .reveal-label { display: none; text-align: center; margin-top: 12px; padding: 10px 16px; background: linear-gradient(135deg, #e8f8f0, #eaf2f8); border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--primary); border: 1px solid var(--primary); animation: fadeSlide 0.6s ease; }
+        .reveal-label.show { display: block; }
+        @keyframes fadeSlide { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
+
+        .word-bank { flex: 1; min-width: 180px; background: #f8f9fa; border-radius: 10px; padding: 16px; border: 1px solid #dde1e6; max-height: 480px; overflow-y: auto; }
+        .word-bank h3 { font-size: 15px; color: var(--primary); margin-bottom: 10px; text-align: center; }
+        .word-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; margin-bottom: 4px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--primary); background: #fff; border: 1px solid #e8ecf1; transition: all 0.25s; }
+        .word-item.found { color: #fff; text-decoration: line-through; border-color: transparent; }
+        .word-item.found.wc0{background:#2ECC71}.word-item.found.wc1{background:#27AE60}.word-item.found.wc2{background:#1E8449}.word-item.found.wc3{background:#196F3D}
+        .word-item.found.wc4{background:#2980B9}.word-item.found.wc5{background:#2471A3}.word-item.found.wc6{background:#1A5276}.word-item.found.wc7{background:#154360}
+        .word-item.found.wc8{background:#1ABC9C}.word-item.found.wc9{background:#17A589}.word-item.found.wc10{background:#148F77}.word-item.found.wc11{background:#0E6655}
+        .word-item.found.wc12{background:#3498DB}.word-item.found.wc13{background:#2E86C1}.word-item.found.wc14{background:#2874A6}.word-item.found.wc15{background:#21618C}
+        .word-item .icon { font-size: 16px; }
+        .word-item .txt { flex: 1; }
+        .word-item .chk { opacity: 0; transition: opacity 0.2s; }
+        .word-item.found .chk { opacity: 1; }
+
+        .progress-row { display: flex; align-items: center; gap: 12px; margin: 16px 0; padding: 10px 16px; background: #f5f7fa; border-radius: 8px; }
+        .progress-row .ptxt { font-size: 14px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+        .progress-row .ptxt strong { font-size: 18px; }
+        .pbar { flex: 1; height: 8px; background: #dde1e6; border-radius: 20px; overflow: hidden; }
+        .pbar .pfill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green1), var(--blue1)); border-radius: 20px; transition: width 0.4s; }
+
+        .msg { margin-top: 12px; padding: 10px 16px; border-radius: 8px; display: none; font-weight: 600; font-size: 14px; text-align: center; }
+        .msg.show { display: block; }
+        .msg.ok { background: #e8f8f0; color: #1a7a4a; border-left: 3px solid var(--green1); }
+        .msg.err { background: #fde8e8; color: #8a2a2a; border-left: 3px solid #E74C3C; }
+
+        .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .btn { padding: 10px 28px; font-size: 14px; font-weight: 700; border: none; border-radius: 30px; cursor: pointer; transition: all 0.2s; }
+        .btn-p { background: var(--primary); color: #fff; }
+        .btn-p:hover { background: var(--blue2); transform: translateY(-1px); }
+        .btn-s { background: #e8ecf1; color: var(--primary); }
+        .btn-s:hover { background: #dde1e6; transform: translateY(-1px); }
+
+        .done { display: none; margin-top: 20px; padding: 28px; text-align: center; background: linear-gradient(135deg, #e8f8f0, #eaf2f8); border: 2px solid var(--primary); border-radius: 12px; }
+        .done.show { display: block; }
+        .done .emoji { font-size: 48px; }
+        .done h2 { color: var(--primary); font-size: 22px; margin: 8px 0 4px; }
+        .done .time { font-size: 24px; font-weight: 700; color: var(--primary); margin: 6px 0; }
+        .done .stars { font-size: 32px; letter-spacing: 4px; margin: 6px 0; }
+        .done .note { font-size: 14px; color: #333; line-height: 1.7; margin: 12px 0 16px; padding: 16px 20px; background: #fff; border-radius: 8px; border-left: 4px solid var(--primary); text-align: left; }
+        .done .note strong { color: var(--primary); }
+        .done .motivation { font-size: 15px; color: var(--primary); font-weight: 600; line-height: 1.7; margin: 12px 0 18px; padding: 16px 20px; background: linear-gradient(135deg, #eaf2f8, #e8f0fe); border-radius: 8px; border-left: 4px solid var(--blue1); text-align: center; font-style: italic; }
+        .done .btn-p { font-size: 16px; padding: 12px 36px; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .dialog { background: #fff; border-radius: 16px; padding: 30px 36px; max-width: 380px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .dialog h3 { color: var(--primary); margin-bottom: 8px; }
+        .dialog p { color: #666; font-size: 14px; margin-bottom: 20px; }
+        .dialog .btn-row { justify-content: center; }
+
+        .confetti-box { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; overflow: hidden; }
+        .conf { position: absolute; width: 8px; height: 8px; opacity: 0; animation: cfall linear forwards; }
+        @keyframes cfall { 0%{opacity:1;transform:translateY(-10px) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)} }
+
+        @media(max-width:650px){
+            .container{padding:24px 18px}
+            .game-area{flex-direction:column;gap:16px}
+            .cell{width:28px;height:28px;font-size:12px}
+            .word-bank{max-height:220px}
+            .top-bar{flex-direction:column;align-items:stretch;text-align:center}
+            .method{flex-direction:column;align-items:center;text-align:center;gap:6px}
+            .method .m-icon{font-size:32px}
+        }
+        @media(max-width:400px){.cell{width:23px;height:23px;font-size:10px}.grid{gap:1px}}
+        @media print{.btn-row,.overlay,.confetti-box,.done,.reveal-label,.sel-indicator{display:none!important}body{background:#fff}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="module-code">BMA4000-20 | THE BUSINESS ENVIRONMENT</div>
+        <div class="session-title">Session 15: Sectors and Structures</div>
+        <div class="activity-type">🔍 Crossword Word Search</div>
+    </div>
+    <h1>🔍 Crossword Word Search</h1>
+    <div class="subtitle">Find 16 business terms hidden in the grid. Words intersect like a real crossword!</div>
+
+    <div class="why-matters">
+        <h3>💡 Why This Matters</h3>
+        <p>This is not just a word search — it is a <strong>vocabulary builder</strong> for your future career. Every term you find here is a word you will use again and again:</p>
+        <ul>
+            <li>In your <strong>assignments and exams</strong> throughout this degree</li>
+            <li>In <strong>business news</strong> you read on BBC, The Guardian, or Financial Times</li>
+            <li>In <strong>job interviews</strong> when employers ask about your understanding of business structures</li>
+            <li>In your <strong>daily work life</strong> — whether you start a business, join a company, or work in the public sector</li>
+        </ul>
+        <p>The 16 terms in this puzzle are the <strong>foundation language of business</strong>. Once you know them, you will never forget them — and they will set you apart from others who don't.</p>
+        <p class="closing">"The limits of my language mean the limits of my world." — Ludwig Wittgenstein</p>
+    </div>
+
+    <!-- CLEAR INSTRUCTIONS - TWO METHODS -->
+    <div class="instructions">
+        <h3>📖 How to Play — Two Easy Methods</h3>
+
+        <div class="method">
+            <div class="m-icon">👆</div>
+            <div class="m-body">
+                <div class="m-title">Method 1: Tap-Tap <span class="m-badge phone">📱 Best for Mobile</span></div>
+                <div class="m-steps">
+                    <strong>Step 1:</strong> Tap the <strong>first letter</strong> of the word (it turns gold)<br/>
+                    <strong>Step 2:</strong> Tap the <strong>last letter</strong> of the word<br/>
+                    The game draws the line between them automatically!
+                </div>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="m-icon">🖱️</div>
+            <div class="m-body">
+                <div class="m-title">Method 2: Click & Drag <span class="m-badge desktop">💻 Best for Desktop</span></div>
+                <div class="m-steps">
+                    <strong>Step 1:</strong> Click and hold the <strong>first letter</strong><br/>
+                    <strong>Step 2:</strong> Drag to the <strong>last letter</strong> and release<br/>
+                    Works with mouse or trackpad.
+                </div>
+            </div>
+        </div>
+
+        <div class="rules">
+            <strong>📏 Rules:</strong> Words go <strong>across →</strong> or <strong>down ↓</strong> only (no diagonals). Words <strong>share letters</strong> at intersections — a letter can belong to two words. ⬛ Black squares are spacers. 💡 Hint adds 10 seconds. Find all <strong>16 words</strong> to win!
+        </div>
+    </div>
+
+    <!-- Selection indicator for tap-tap mode -->
+    <div class="sel-indicator" id="selIndicator">👆 First letter selected — now tap the <strong>last letter</strong> of the word!</div>
+
+    <div class="top-bar">
+        <span>⏱️ <span class="timer" id="timer">0s</span></span>
+        <span><span class="hint-label" id="hintLabel"></span> <button class="hint-btn" id="hintBtn">💡 Hint</button></span>
+    </div>
+    <div class="game-area">
+        <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+        <div class="word-bank"><h3>📋 Words to Find</h3><div id="wlist"></div></div>
+    </div>
+    <div class="progress-row">
+        <span class="ptxt">Found: <strong id="fc">0</strong>/<strong id="tc">16</strong></span>
+        <div class="pbar"><div class="pfill" id="pf"></div></div>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="reveal-label" id="revealLabel">🔍 Your 16 business terms — take a moment to memorise them!</div>
+    <div class="btn-row">
+        <button class="btn btn-p" id="newBtn">🔄 New Puzzle</button>
+        <button class="btn btn-s" id="clrBtn">🧹 Clear Selection</button>
+    </div>
+    <div class="done" id="done">
+        <div class="emoji" id="dEmoji">🎉</div>
+        <h2 id="dTitle">Well Done!</h2>
+        <div class="time" id="dTime">0s</div>
+        <div class="stars" id="dStars">⭐⭐⭐</div>
+        <div class="note" id="dNote"></div>
+        <div class="motivation" id="dMotivation"></div>
+        <button class="btn btn-p" id="dBtn">🔄 Play Again</button>
+    </div>
+    <div class="confetti-box" id="confBox"></div>
+</div>
+<div class="overlay" id="ov">
+    <div class="dialog">
+        <h3>🔄 New Puzzle?</h3>
+        <p>Current progress will be lost.</p>
+        <div class="btn-row">
+            <button class="btn btn-p" id="ovYes" style="background:#C0392B">Yes</button>
+            <button class="btn btn-s" id="ovNo">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const WORDS=[
+    {w:'PRIVATE',i:'🏢'},{w:'PUBLIC',i:'🏛️'},{w:'NONPROFIT',i:'🤝'},
+    {w:'SOLETRADER',i:'👤'},{w:'PARTNERSHIP',i:'🤝'},{w:'LIMITED',i:'🏢'},
+    {w:'PLC',i:'📈'},{w:'COOPERATIVE',i:'🤲'},{w:'LIABILITY',i:'⚖️'},
+    {w:'PRIMARY',i:'🌾'},{w:'SECONDARY',i:'🏭'},{w:'TERTIARY',i:'💼'},
+    {w:'QUATERNARY',i:'💻'},{w:'SECTOR',i:'📊'},{w:'ENTREPRENEUR',i:'🚀'},
+    {w:'INVESTMENT',i:'💰'}
+];
+const GS=14;
+let G=[],placed=[],found=[],sel=false,start=null,hl=[],done=false,secs=0,tInt=null,started=false,hinting=false;
+let firstTap=null; // For tap-tap mode
+
+const $=id=>document.getElementById(id);
+const grid=$('grid'),wlist=$('wlist');
+
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function genGrid(){
+    G=[];for(let r=0;r<GS;r++){G[r]=[];for(let c=0;c<GS;c++)G[r][c]='';}
+    placed=[];
+    const sorted=shuf([...WORDS]).sort((a,b)=>b.w.length-a.w.length);
+    const f=sorted[0],fr=Math.floor(GS/2),fc=Math.floor((GS-f.w.length)/2);
+    for(let i=0;i<f.w.length;i++)G[fr][fc+i]=f.w[i];
+    placed.push({w:f.w,r:fr,c:fc,d:[0,1]});
+    for(let wi=1;wi<sorted.length;wi++){
+        const word=sorted[wi].w;let ok=false,tries=0;
+        while(!ok&&tries<1000){
+            tries++;
+            const target=placed[Math.floor(Math.random()*placed.length)];
+            const indices=[];
+            for(let a=0;a<word.length;a++)for(let b=0;b<target.w.length;b++)if(word[a]===target.w[b])indices.push([a,b]);
+            if(indices.length===0)continue;
+            const pick=indices[Math.floor(Math.random()*indices.length)];
+            const si=pick[0],ti=pick[1];
+            const nd=target.d[0]===0?[1,0]:[0,1];
+            const tR=target.r+target.d[0]*ti,tC=target.c+target.d[1]*ti;
+            const sR=tR-nd[0]*si,sC=tC-nd[1]*si;
+            let fits=true;
+            for(let k=0;k<word.length;k++){
+                const nr=sR+nd[0]*k,nc=sC+nd[1]*k;
+                if(nr<0||nr>=GS||nc<0||nc>=GS){fits=false;break;}
+                if(G[nr][nc]!==''&&G[nr][nc]!==word[k]){fits=false;break;}
+                if(G[nr][nc]===''&&k!==si){
+                    const perp=nd[0]===0?[[1,0],[-1,0]]:[[0,1],[0,-1]];
+                    for(const p of perp){const ar=nr+p[0],ac=nc+p[1];if(ar>=0&&ar<GS&&ac>=0&&ac<GS&&G[ar][ac]!==''&&!(ar===tR&&ac===tC)){fits=false;break;}}
+                    if(!fits)break;
+                }
+            }
+            if(!fits)continue;
+            const br=sR-nd[0],bc=sC-nd[1];if(br>=0&&br<GS&&bc>=0&&bc<GS&&G[br][bc]!=='')continue;
+            const ar=sR+nd[0]*word.length,ac=sC+nd[1]*word.length;if(ar>=0&&ar<GS&&ac>=0&&ac<GS&&G[ar][ac]!=='')continue;
+            for(let k=0;k<word.length;k++)G[sR+nd[0]*k][sC+nd[1]*k]=word[k];
+            placed.push({w:word,r:sR,c:sC,d:nd});ok=true;
+        }
+        if(!ok){for(let t2=0;t2<300&&!ok;t2++){const d=[[0,1],[1,0]][Math.floor(Math.random()*2)];const mr=d[0]?GS-word.length:GS-1,mc=d[1]?GS-word.length:GS-1;const r=Math.floor(Math.random()*(mr+1)),c=Math.floor(Math.random()*(mc+1));let f2=true;for(let k=0;k<word.length;k++){if(G[r+d[0]*k][c+d[1]*k]!==''&&G[r+d[0]*k][c+d[1]*k]!==word[k]){f2=false;break;}}if(f2){for(let k=0;k<word.length;k++)G[r+d[0]*k][c+d[1]*k]=word[k];placed.push({w:word,r,c,d});ok=true;}}}
+    }
+    const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';for(let r=0;r<GS;r++)for(let c=0;c<GS;c++)if(G[r][c]==='')G[r][c]=L[Math.floor(Math.random()*26)];
+    const bc=Math.floor(GS*GS*0.08);const pos=[];for(let r=0;r<GS;r++)for(let c=0;c<GS;c++)pos.push([r,c]);shuf(pos);let ba=0;
+    for(const p of pos){if(ba>=bc)break;let ip=false;for(const pw of placed)for(let k=0;k<pw.w.length;k++)if(pw.r+pw.d[0]*k===p[0]&&pw.c+pw.d[1]*k===p[1]){ip=true;break;}if(!ip){G[p[0]][p[1]]='■';ba++;}}
+}
+
+function render(){
+    grid.style.gridTemplateColumns=`repeat(${GS},1fr)`;grid.innerHTML='';
+    const cm={};found.forEach((w,i)=>{const p=placed.find(x=>x.w===w);if(p)for(let k=0;k<p.w.length;k++)cm[(p.r+p.d[0]*k)+','+(p.c+p.d[1]*k)]=i;});
+    for(let r=0;r<GS;r++)for(let c=0;c<GS;c++){
+        const d=document.createElement('div');d.className='cell';d.dataset.r=r;d.dataset.c=c;
+        if(G[r][c]==='■'){d.classList.add('black');}
+        else{
+            d.textContent=G[r][c];const k=r+','+c;if(cm[k]!==undefined)d.classList.add('found','c'+cm[k]);
+            // Mouse events (desktop drag)
+            d.addEventListener('mousedown',e=>{e.preventDefault();if(done)return;if(!started)startTimer();beginSel(r,c);});
+            d.addEventListener('mouseenter',()=>{if(sel)extSel(r,c);});
+            d.addEventListener('mouseup',endSel);
+            // Touch events (mobile tap-tap + swipe)
+            d.addEventListener('touchstart',e=>{
+                e.preventDefault();if(done)return;if(!started)startTimer();
+                handleTap(r,c);
+            },{passive:false});
+            d.addEventListener('touchmove',e=>{
+                e.preventDefault();
+                const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
+                if(el&&el.classList.contains('cell')&&!el.classList.contains('black'))extSel(+el.dataset.r,+el.dataset.c);
+            },{passive:false});
+            d.addEventListener('touchend',e=>{e.preventDefault();if(sel)endSel();},{passive:false});
+        }
+        grid.appendChild(d);
+    }
+    updProg();updBank();
+}
+
+// ================================================================
+// TAP-TAP MODE (Mobile Friendly)
+// ================================================================
+function handleTap(r,c){
+    const cl=gc(r,c);if(!cl||cl.classList.contains('black')||cl.classList.contains('found'))return;
+
+    if(!firstTap){
+        // FIRST TAP - select starting letter
+        firstTap={r,c};
+        cl.classList.add('first-tap');
+        $('selIndicator').classList.add('show');
+    }else{
+        // SECOND TAP - select ending letter, build selection between them
+        const fr=firstTap.r,fc2=firstTap.c;
+        // Clear first-tap highlight
+        const prevCl=gc(fr,fc2);if(prevCl)prevCl.classList.remove('first-tap');
+        $('selIndicator').classList.remove('show');
+
+        const dr=r-fr,dc=c-fc2;
+        let dir=null;
+        if(dr===0&&dc!==0)dir=[0,dc>0?1:-1]; // horizontal (both directions)
+        else if(dc===0&&dr!==0)dir=[dr>0?1:-1,0]; // vertical (both directions)
+
+        if(!dir){
+            // Not a straight line - restart with this cell as new first tap
+            firstTap={r,c};cl.classList.add('first-tap');$('selIndicator').classList.add('show');
+            return;
+        }
+
+        // Build the selection from first tap to second tap
+        const steps=Math.max(Math.abs(dr),Math.abs(dc));
+        sel=true;start={r:fr,c:fc2};hl=[];
+        for(let i=0;i<=steps;i++){
+            const nr=fr+dir[0]*i,nc=fc2+dir[1]*i;
+            if(nr<0||nr>=GS||nc<0||nc>=GS)break;
+            const c2=gc(nr,nc);
+            if(c2&&!c2.classList.contains('black')){c2.classList.add('selecting');hl.push({r:nr,c:nc});}
+            else break;
+        }
+        firstTap=null;
+        endSel();
+    }
+}
+
+function gc(r,c){return grid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
+
+function updBank(){
+    wlist.innerHTML='';WORDS.forEach(wd=>{const d=document.createElement('div');d.className='word-item';const fi=found.indexOf(wd.w);if(fi!==-1)d.classList.add('found','wc'+fi);d.innerHTML=`<span class="icon">${wd.i}</span><span class="txt">${wd.w}</span><span class="chk">✅</span>`;wlist.appendChild(d);});
+}
+function updProg(){const f=found.length,t=WORDS.length;$('fc').textContent=f;$('tc').textContent=t;$('pf').style.width=(f/t*100)+'%';$('hintBtn').disabled=f===t||done;}
+
+function beginSel(r,c){sel=true;start={r,c};hl=[{r,c}];const cl=gc(r,c);if(cl)cl.classList.add('selecting');hideMsg();firstTap=null;$('selIndicator').classList.remove('show');}
+function extSel(r,c){if(!sel)return;const cl=gc(r,c);if(!cl||cl.classList.contains('black'))return;const dr=r-start.r,dc=c-start.c;let d=null;if(dr===0&&dc>0)d=[0,1];else if(dr===0&&dc<0)d=[0,-1];else if(dr>0&&dc===0)d=[1,0];else if(dr<0&&dc===0)d=[-1,0];else{clrHL();start={r,c};hl=[{r,c}];if(cl)cl.classList.add('selecting');return;}clrHL();const steps=Math.max(Math.abs(dr),Math.abs(dc));hl=[];for(let i=0;i<=steps;i++){const nr=start.r+d[0]*i,nc=start.c+d[1]*i;if(nr<0||nr>=GS||nc<0||nc>=GS)break;const c2=gc(nr,nc);if(c2&&!c2.classList.contains('black')){c2.classList.add('selecting');hl.push({r:nr,c:nc});}else break;}}
+
+function endSel(){
+    if(!sel)return;sel=false;if(hl.length<2){clrHL();return;}
+    let word='';hl.forEach(p=>word+=G[p.r][p.c]);
+    const fw=WORDS.find(wd=>wd.w===word&&!found.includes(wd.w));
+    if(fw){
+        found.push(fw.w);const ci=found.length-1;
+        hl.forEach(p=>{const cl=gc(p.r,p.c);if(cl){cl.classList.remove('selecting');cl.classList.add('found','c'+ci);}});
+        hl=[];updProg();updBank();
+        if(found.length===WORDS.length){done=true;stopTimer();revealAndComplete();}
+        showMsg('✅ Found "'+fw.w+'"!','ok');
+    }else if(WORDS.some(wd=>wd.w===word)&&found.includes(word)){
+        showMsg('Already found!','err');clrHL();
+    }else{
+        showMsg('Not a word – try again','err');clrHL();
+    }
+}
+
+function clrHL(){
+    hl.forEach(p=>{const cl=gc(p.r,p.c);if(cl)cl.classList.remove('selecting');});
+    hl=[];
+    // Also clear any first-tap highlight
+    document.querySelectorAll('.cell.first-tap').forEach(c=>c.classList.remove('first-tap'));
+    firstTap=null;$('selIndicator').classList.remove('show');
+}
+
+// ================================================================
+// REVEAL MODE
+// ================================================================
+function revealAndComplete(){
+    const foundCells=new Set();
+    found.forEach(w=>{const p=placed.find(x=>x.w===w);if(p)for(let k=0;k<p.w.length;k++)foundCells.add((p.r+p.d[0]*k)+','+(p.c+p.d[1]*k));});
+    const allCells=grid.querySelectorAll('.cell');
+    let delay=0;
+    allCells.forEach(cell=>{
+        const key=cell.dataset.r+','+cell.dataset.c;
+        if(foundCells.has(key)){setTimeout(()=>{cell.classList.add('revealed');},delay);delay+=15;}
+        else{setTimeout(()=>{cell.classList.add('faded');},delay);delay+=8;}
+    });
+    setTimeout(()=>{$('revealLabel').classList.add('show');},delay+200);
+    setTimeout(()=>{showDone();},delay+1200);
+}
+
+function hint(){if(hinting||done)return;const uf=WORDS.filter(wd=>!found.includes(wd.w));if(!uf.length)return;const rw=uf[Math.floor(Math.random()*uf.length)];const pl=placed.find(p=>p.w===rw.w);if(!pl)return;hinting=true;$('hintBtn').disabled=true;$('hintLabel').textContent='Showing: '+rw.w;const cells=[];for(let k=0;k<pl.w.length;k++){const cl=gc(pl.r+pl.d[0]*k,pl.c+pl.d[1]*k);if(cl)cells.push(cl);}let n=0;const iv=setInterval(()=>{cells.forEach(c=>c.classList.toggle('hint-flash'));n++;if(n>=10){clearInterval(iv);cells.forEach(c=>c.classList.remove('hint-flash'));hinting=false;$('hintBtn').disabled=false;$('hintLabel').textContent='';secs+=10;$('timer').textContent=secs+'s';}},300);}
+
+function startTimer(){started=true;tInt=setInterval(()=>{secs++;$('timer').textContent=secs+'s';},1000);}
+function stopTimer(){clearInterval(tInt);tInt=null;}
+function resetTimer(){stopTimer();secs=0;started=false;$('timer').textContent='0s';}
+function showMsg(t,c){const m=$('msg');m.textContent=t;m.className='msg show '+c;setTimeout(()=>{m.className='msg';},2000);}
+function hideMsg(){$('msg').className='msg';}
+
+function showDone(){
+    const t=secs;let s,e,ti;
+    if(t<120){s='⭐⭐⭐';e='👑';ti='Brilliant! Under 2 minutes!';}
+    else if(t<240){s='⭐⭐';e='🌟';ti='Great work! Under 4 minutes!';}
+    else{s='⭐';e='💪';ti='Well done! Every attempt builds vocabulary.';}
+    $('dEmoji').textContent=e;$('dTitle').textContent=ti;$('dTime').textContent=t+'s';$('dStars').textContent=s;
+    $('dNote').innerHTML='You just found and reinforced <strong>16 essential business terms</strong> — from <strong>Private Sector</strong> to <strong>Entrepreneur</strong>, from <strong>Liability</strong> to <strong>Investment</strong>. These are not just words on a grid. They are the language you will use in every report, every presentation, and every conversation throughout your career.';
+    $('dMotivation').innerHTML='🌟 <strong>Keep building your business vocabulary.</strong><br/>Every term you learn today is a tool you will carry for life.<br/>Read business news. Use these words in your assignments. Speak them with confidence.<br/><strong>Your future self will thank you.</strong>';
+    $('done').classList.add('show');
+    confetti();setTimeout(confetti,500);setTimeout(confetti,1000);
+    setTimeout(()=>$('done').scrollIntoView({behavior:'smooth',block:'center'}),300);
+}
+
+function confetti(){const cs=['#2ECC71','#2980B9','#1ABC9C','#3498DB','#27AE60','#1A5276'];for(let i=0;i<80;i++){const p=document.createElement('div');p.className='conf';p.style.left=Math.random()*100+'%';p.style.top='-10px';p.style.background=cs[Math.floor(Math.random()*cs.length)];p.style.animationDuration=(2+Math.random()*2)+'s';p.style.animationDelay=(Math.random()*1)+'s';$('confBox').appendChild(p);setTimeout(()=>p.remove(),4000);}}
+
+function newGame(){if(found.length>0&&found.length<WORDS.length){$('ov').classList.add('show');return;}doReset();}
+function doReset(){found=[];done=false;hinting=false;firstTap=null;resetTimer();hideMsg();$('done').classList.remove('show');$('ov').classList.remove('show');$('revealLabel').classList.remove('show');$('selIndicator').classList.remove('show');genGrid();render();window.scrollTo({top:0,behavior:'smooth'});}
+
+document.addEventListener('mouseup',()=>{if(sel)endSel();});
+$('newBtn').addEventListener('click',newGame);
+$('clrBtn').addEventListener('click',()=>{clrHL();sel=false;start=null;hideMsg();});
+$('hintBtn').addEventListener('click',hint);
+$('dBtn').addEventListener('click',doReset);
+$('ovYes').addEventListener('click',doReset);
+$('ovNo').addEventListener('click',()=>$('ov').classList.remove('show'));
+$('ov').addEventListener('click',e=>{if(e.target===$('ov'))$('ov').classList.remove('show');});
+
+genGrid();render();
+</script>
+</body>
+</html>
