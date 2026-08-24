@@ -23,7 +23,6 @@
         .why-matters ul li { list-style-type: "✅ "; padding-left: 4px; }
         .why-matters .closing { font-size: 14px; color: var(--primary); font-weight: 600; margin-top: 8px; font-style: italic; }
 
-        /* INSTRUCTIONS - Two methods clearly shown */
         .instructions { background: #f5f7fa; border-radius: 10px; padding: 18px 22px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
         .instructions h3 { color: var(--primary); font-size: 16px; margin-bottom: 10px; }
         .method { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; padding: 12px 14px; background: #fff; border-radius: 8px; border: 1px solid #e8ecf1; }
@@ -39,7 +38,6 @@
         .rules { margin-top: 12px; padding: 10px 14px; background: linear-gradient(135deg, #eaf2f8, #e8f0fe); border-radius: 8px; font-size: 13px; color: #333; line-height: 1.7; }
         .rules strong { color: var(--primary); }
 
-        /* Selection indicator */
         .sel-indicator { display: none; text-align: center; padding: 8px 16px; margin-bottom: 12px; background: linear-gradient(135deg, var(--primary), var(--blue2)); color: #fff; border-radius: 8px; font-size: 14px; font-weight: 600; animation: slideDown 0.3s ease; }
         .sel-indicator.show { display: block; }
         @keyframes slideDown { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
@@ -53,7 +51,7 @@
 
         .game-area { display: flex; flex-wrap: wrap; gap: 24px; }
         .grid-wrap { flex: 2; min-width: 280px; overflow-x: auto; }
-        .grid { display: inline-grid; gap: 2px; user-select: none; touch-action: none; }
+        .grid { display: inline-grid; gap: 2px; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
         .cell {
             width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;
             font-size: 14px; font-weight: 700; color: var(--primary); background: #f8f9fa;
@@ -62,12 +60,16 @@
             -webkit-tap-highlight-color: transparent;
         }
         .cell.black { background: #2c3e50; border-color: #2c3e50; cursor: default; pointer-events: none; }
-        .cell:hover:not(.black):not(.found):not(.faded) { background: #e8ecf1; }
-        .cell.selecting { background: #F1C40F !important; color: #333 !important; transform: scale(1.06); transition: all 0.12s; }
-        .cell.first-tap { background: #F1C40F !important; color: #333 !important; transform: scale(1.1); box-shadow: 0 0 0 3px rgba(241,196,15,0.5); transition: all 0.15s; }
+        .cell:hover:not(.black):not(.faded) { background: #e8ecf1; }
+
+        /* SELECTING & FIRST-TAP must override EVERYTHING including found colours */
+        .cell.selecting { background: #F1C40F !important; color: #333 !important; transform: scale(1.06) !important; transition: all 0.12s !important; border-color: #F1C40F !important; text-shadow: none !important; box-shadow: 0 0 0 2px rgba(241,196,15,0.4) !important; z-index: 2; position: relative; }
+        .cell.first-tap { background: #F1C40F !important; color: #333 !important; transform: scale(1.1) !important; box-shadow: 0 0 0 3px rgba(241,196,15,0.6) !important; transition: all 0.15s !important; border-color: #F1C40F !important; text-shadow: none !important; z-index: 2; position: relative; }
+
         .cell.hint-flash { animation: hintFlash 0.35s ease 5; }
         @keyframes hintFlash { 0%,100%{background:#f8f9fa}50%{background:#F1C40F;transform:scale(1.1)} }
 
+        /* Found colours */
         .cell.found { color: #fff !important; cursor: pointer; border-color: transparent; text-shadow: 0 1px 1px rgba(0,0,0,0.2); }
         .cell.c0{background:#2ECC71}.cell.c1{background:#27AE60}.cell.c2{background:#1E8449}.cell.c3{background:#196F3D}
         .cell.c4{background:#2980B9}.cell.c5{background:#2471A3}.cell.c6{background:#1A5276}.cell.c7{background:#154360}
@@ -171,10 +173,8 @@
         <p class="closing">"The limits of my language mean the limits of my world." — Ludwig Wittgenstein</p>
     </div>
 
-    <!-- CLEAR INSTRUCTIONS - TWO METHODS -->
     <div class="instructions">
         <h3>📖 How to Play — Two Easy Methods</h3>
-
         <div class="method">
             <div class="m-icon">👆</div>
             <div class="m-body">
@@ -182,11 +182,11 @@
                 <div class="m-steps">
                     <strong>Step 1:</strong> Tap the <strong>first letter</strong> of the word (it turns gold)<br/>
                     <strong>Step 2:</strong> Tap the <strong>last letter</strong> of the word<br/>
-                    The game draws the line between them automatically!
+                    The game draws the line between them automatically!<br/>
+                    <em>Letters shared between words can be tapped again for the next word.</em>
                 </div>
             </div>
         </div>
-
         <div class="method">
             <div class="m-icon">🖱️</div>
             <div class="m-body">
@@ -198,13 +198,11 @@
                 </div>
             </div>
         </div>
-
         <div class="rules">
             <strong>📏 Rules:</strong> Words go <strong>across →</strong> or <strong>down ↓</strong> only (no diagonals). Words <strong>share letters</strong> at intersections — a letter can belong to two words. ⬛ Black squares are spacers. 💡 Hint adds 10 seconds. Find all <strong>16 words</strong> to win!
         </div>
     </div>
 
-    <!-- Selection indicator for tap-tap mode -->
     <div class="sel-indicator" id="selIndicator">👆 First letter selected — now tap the <strong>last letter</strong> of the word!</div>
 
     <div class="top-bar">
@@ -258,10 +256,10 @@ const WORDS=[
 ];
 const GS=14;
 let G=[],placed=[],found=[],sel=false,start=null,hl=[],done=false,secs=0,tInt=null,started=false,hinting=false;
-let firstTap=null; // For tap-tap mode
+let firstTap=null;
 
 const $=id=>document.getElementById(id);
-const grid=$('grid'),wlist=$('wlist');
+const gridEl=$('grid'),wlist=$('wlist');
 
 function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -310,95 +308,136 @@ function genGrid(){
 }
 
 function render(){
-    grid.style.gridTemplateColumns=`repeat(${GS},1fr)`;grid.innerHTML='';
+    gridEl.style.gridTemplateColumns=`repeat(${GS},1fr)`;gridEl.innerHTML='';
     const cm={};found.forEach((w,i)=>{const p=placed.find(x=>x.w===w);if(p)for(let k=0;k<p.w.length;k++)cm[(p.r+p.d[0]*k)+','+(p.c+p.d[1]*k)]=i;});
     for(let r=0;r<GS;r++)for(let c=0;c<GS;c++){
         const d=document.createElement('div');d.className='cell';d.dataset.r=r;d.dataset.c=c;
         if(G[r][c]==='■'){d.classList.add('black');}
         else{
             d.textContent=G[r][c];const k=r+','+c;if(cm[k]!==undefined)d.classList.add('found','c'+cm[k]);
-            // Mouse events (desktop drag)
-            d.addEventListener('mousedown',e=>{e.preventDefault();if(done)return;if(!started)startTimer();beginSel(r,c);});
-            d.addEventListener('mouseenter',()=>{if(sel)extSel(r,c);});
+            d.addEventListener('mousedown',function(e){e.preventDefault();if(done)return;if(!started)startTimer();beginSel(r,c);});
+            d.addEventListener('mouseenter',function(){if(sel)extSel(r,c);});
             d.addEventListener('mouseup',endSel);
-            // Touch events (mobile tap-tap + swipe)
-            d.addEventListener('touchstart',e=>{
-                e.preventDefault();if(done)return;if(!started)startTimer();
-                handleTap(r,c);
-            },{passive:false});
-            d.addEventListener('touchmove',e=>{
-                e.preventDefault();
-                const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
-                if(el&&el.classList.contains('cell')&&!el.classList.contains('black'))extSel(+el.dataset.r,+el.dataset.c);
-            },{passive:false});
-            d.addEventListener('touchend',e=>{e.preventDefault();if(sel)endSel();},{passive:false});
         }
-        grid.appendChild(d);
+        gridEl.appendChild(d);
     }
     updProg();updBank();
 }
 
 // ================================================================
-// TAP-TAP MODE (Mobile Friendly)
+// SINGLE TOUCH HANDLER ON GRID (bulletproof mobile)
 // ================================================================
-function handleTap(r,c){
-    const cl=gc(r,c);if(!cl||cl.classList.contains('black')||cl.classList.contains('found'))return;
+gridEl.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (done) return;
+    if (!started) startTimer();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!el || !el.classList.contains('cell') || el.classList.contains('black') || el.classList.contains('faded')) return;
+    handleTap(parseInt(el.dataset.r), parseInt(el.dataset.c));
+}, { passive: false });
 
-    if(!firstTap){
-        // FIRST TAP - select starting letter
-        firstTap={r,c};
+gridEl.addEventListener('touchend', function(e) { e.preventDefault(); }, { passive: false });
+gridEl.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+
+// ================================================================
+// TAP-TAP - Found cells ARE selectable (intersection fix)
+// ================================================================
+function handleTap(r, c) {
+    const cl = gc(r, c);
+    // Only block black and faded cells - NOT found cells!
+    if (!cl || cl.classList.contains('black') || cl.classList.contains('faded')) return;
+
+    if (!firstTap) {
+        firstTap = { r, c };
         cl.classList.add('first-tap');
         $('selIndicator').classList.add('show');
-    }else{
-        // SECOND TAP - select ending letter, build selection between them
-        const fr=firstTap.r,fc2=firstTap.c;
-        // Clear first-tap highlight
-        const prevCl=gc(fr,fc2);if(prevCl)prevCl.classList.remove('first-tap');
+    } else {
+        const fr = firstTap.r, fc2 = firstTap.c;
+        const prevCl = gc(fr, fc2);
+        if (prevCl) prevCl.classList.remove('first-tap');
         $('selIndicator').classList.remove('show');
 
-        const dr=r-fr,dc=c-fc2;
-        let dir=null;
-        if(dr===0&&dc!==0)dir=[0,dc>0?1:-1]; // horizontal (both directions)
-        else if(dc===0&&dr!==0)dir=[dr>0?1:-1,0]; // vertical (both directions)
+        if (fr === r && fc2 === c) { firstTap = null; return; }
 
-        if(!dir){
-            // Not a straight line - restart with this cell as new first tap
-            firstTap={r,c};cl.classList.add('first-tap');$('selIndicator').classList.add('show');
-            return;
+        const dr = r - fr, dc = c - fc2;
+        let dir = null;
+        if (dr === 0 && dc !== 0) dir = [0, dc > 0 ? 1 : -1];
+        else if (dc === 0 && dr !== 0) dir = [dr > 0 ? 1 : -1, 0];
+
+        if (!dir) {
+            firstTap = { r, c }; cl.classList.add('first-tap'); $('selIndicator').classList.add('show'); return;
         }
 
-        // Build the selection from first tap to second tap
-        const steps=Math.max(Math.abs(dr),Math.abs(dc));
-        sel=true;start={r:fr,c:fc2};hl=[];
-        for(let i=0;i<=steps;i++){
-            const nr=fr+dir[0]*i,nc=fc2+dir[1]*i;
-            if(nr<0||nr>=GS||nc<0||nc>=GS)break;
-            const c2=gc(nr,nc);
-            if(c2&&!c2.classList.contains('black')){c2.classList.add('selecting');hl.push({r:nr,c:nc});}
-            else break;
+        const steps = Math.max(Math.abs(dr), Math.abs(dc));
+        sel = true; start = { r: fr, c: fc2 }; hl = [];
+        for (let i = 0; i <= steps; i++) {
+            const nr = fr + dir[0] * i, nc = fc2 + dir[1] * i;
+            if (nr < 0 || nr >= GS || nc < 0 || nc >= GS) break;
+            const c2 = gc(nr, nc);
+            // Include ALL non-black cells - even found ones (for intersecting words)
+            if (c2 && !c2.classList.contains('black') && !c2.classList.contains('faded')) {
+                c2.classList.add('selecting');
+                hl.push({ r: nr, c: nc });
+            } else break;
         }
-        firstTap=null;
+        firstTap = null;
         endSel();
     }
 }
 
-function gc(r,c){return grid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
+function gc(r, c) { return gridEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
 
 function updBank(){
     wlist.innerHTML='';WORDS.forEach(wd=>{const d=document.createElement('div');d.className='word-item';const fi=found.indexOf(wd.w);if(fi!==-1)d.classList.add('found','wc'+fi);d.innerHTML=`<span class="icon">${wd.i}</span><span class="txt">${wd.w}</span><span class="chk">✅</span>`;wlist.appendChild(d);});
 }
 function updProg(){const f=found.length,t=WORDS.length;$('fc').textContent=f;$('tc').textContent=t;$('pf').style.width=(f/t*100)+'%';$('hintBtn').disabled=f===t||done;}
 
-function beginSel(r,c){sel=true;start={r,c};hl=[{r,c}];const cl=gc(r,c);if(cl)cl.classList.add('selecting');hideMsg();firstTap=null;$('selIndicator').classList.remove('show');}
-function extSel(r,c){if(!sel)return;const cl=gc(r,c);if(!cl||cl.classList.contains('black'))return;const dr=r-start.r,dc=c-start.c;let d=null;if(dr===0&&dc>0)d=[0,1];else if(dr===0&&dc<0)d=[0,-1];else if(dr>0&&dc===0)d=[1,0];else if(dr<0&&dc===0)d=[-1,0];else{clrHL();start={r,c};hl=[{r,c}];if(cl)cl.classList.add('selecting');return;}clrHL();const steps=Math.max(Math.abs(dr),Math.abs(dc));hl=[];for(let i=0;i<=steps;i++){const nr=start.r+d[0]*i,nc=start.c+d[1]*i;if(nr<0||nr>=GS||nc<0||nc>=GS)break;const c2=gc(nr,nc);if(c2&&!c2.classList.contains('black')){c2.classList.add('selecting');hl.push({r:nr,c:nc});}else break;}}
+function beginSel(r,c){
+    sel=true;start={r,c};hl=[{r,c}];
+    const cl=gc(r,c);if(cl)cl.classList.add('selecting');
+    hideMsg();firstTap=null;$('selIndicator').classList.remove('show');
+}
+
+function extSel(r,c){
+    if(!sel)return;const cl=gc(r,c);
+    // Allow found cells to be part of selection (intersections)
+    if(!cl||cl.classList.contains('black')||cl.classList.contains('faded'))return;
+    const dr=r-start.r,dc=c-start.c;let d=null;
+    if(dr===0&&dc>0)d=[0,1];else if(dr===0&&dc<0)d=[0,-1];
+    else if(dr>0&&dc===0)d=[1,0];else if(dr<0&&dc===0)d=[-1,0];
+    else{clrHL();start={r,c};hl=[{r,c}];if(cl)cl.classList.add('selecting');return;}
+    clrHL();const steps=Math.max(Math.abs(dr),Math.abs(dc));hl=[];
+    for(let i=0;i<=steps;i++){
+        const nr=start.r+d[0]*i,nc=start.c+d[1]*i;
+        if(nr<0||nr>=GS||nc<0||nc>=GS)break;
+        const c2=gc(nr,nc);
+        if(c2&&!c2.classList.contains('black')&&!c2.classList.contains('faded')){
+            c2.classList.add('selecting');hl.push({r:nr,c:nc});
+        }else break;
+    }
+}
 
 function endSel(){
-    if(!sel)return;sel=false;if(hl.length<2){clrHL();return;}
+    if(!sel)return;sel=false;
+    if(hl.length<2){clrHL();return;}
     let word='';hl.forEach(p=>word+=G[p.r][p.c]);
+
+    // Check if word matches an UNFOUND word
     const fw=WORDS.find(wd=>wd.w===word&&!found.includes(wd.w));
+
     if(fw){
         found.push(fw.w);const ci=found.length-1;
-        hl.forEach(p=>{const cl=gc(p.r,p.c);if(cl){cl.classList.remove('selecting');cl.classList.add('found','c'+ci);}});
+        hl.forEach(p=>{
+            const cl=gc(p.r,p.c);
+            if(cl){
+                cl.classList.remove('selecting');
+                // Add new colour - this OVERRIDES previous colour for intersecting cells
+                // Remove old colour classes first
+                for(let x=0;x<16;x++) cl.classList.remove('c'+x);
+                cl.classList.add('found','c'+ci);
+            }
+        });
         hl=[];updProg();updBank();
         if(found.length===WORDS.length){done=true;stopTimer();revealAndComplete();}
         showMsg('✅ Found "'+fw.w+'"!','ok');
@@ -412,18 +451,14 @@ function endSel(){
 function clrHL(){
     hl.forEach(p=>{const cl=gc(p.r,p.c);if(cl)cl.classList.remove('selecting');});
     hl=[];
-    // Also clear any first-tap highlight
     document.querySelectorAll('.cell.first-tap').forEach(c=>c.classList.remove('first-tap'));
     firstTap=null;$('selIndicator').classList.remove('show');
 }
 
-// ================================================================
-// REVEAL MODE
-// ================================================================
 function revealAndComplete(){
     const foundCells=new Set();
     found.forEach(w=>{const p=placed.find(x=>x.w===w);if(p)for(let k=0;k<p.w.length;k++)foundCells.add((p.r+p.d[0]*k)+','+(p.c+p.d[1]*k));});
-    const allCells=grid.querySelectorAll('.cell');
+    const allCells=gridEl.querySelectorAll('.cell');
     let delay=0;
     allCells.forEach(cell=>{
         const key=cell.dataset.r+','+cell.dataset.c;
